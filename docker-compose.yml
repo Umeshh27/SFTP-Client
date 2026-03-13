@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.example
+    environment:
+      - SFTP_HOST=sftp
+      - SFTP_PORT=22
+      - SFTP_USER=testuser
+      - SFTP_PASSWORD=testpass
+      - NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
+    depends_on:
+      sftp:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sftp:
+    image: atmoz/sftp
+    ports:
+      - "2222:22"
+    command: testuser:testpass:::upload
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/22' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
